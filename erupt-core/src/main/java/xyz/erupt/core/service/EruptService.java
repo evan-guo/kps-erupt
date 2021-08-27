@@ -37,7 +37,7 @@ public class EruptService {
      * @param serverCondition 自定义条件
      * @param customCondition 条件字符串
      */
-    public Page getEruptData(EruptModel eruptModel, TableQueryVo tableQueryVo, List<Condition> serverCondition, String... customCondition) {
+    public Page getEruptData(EruptMoeruptModel, TableQueryVo tableQueryVo, List<Condition> serverCondition, String... customCondition) {
         if (PowerInvoke.getPowerObject(eruptModel).isQuery()) {
             List<Condition> legalConditions = EruptUtil.geneEruptSearchCondition(eruptModel, tableQueryVo.getCondition());
             List<String> conditionStrings = new ArrayList<>();

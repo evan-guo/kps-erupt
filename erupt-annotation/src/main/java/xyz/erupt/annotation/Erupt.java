@@ -53,6 +53,9 @@ public @interface Erupt {
     @Comment("排序表达式")
     String orderBy() default "";
 
+    @Comment("表格是否显示勾选框")
+    boolean checkbox() default true;
+
     @Transient
     @Comment("数据行为代理接口，对增、删、改、查等行为做逻辑处理")
     Class<? extends DataProxy<?>>[] dataProxy() default {};

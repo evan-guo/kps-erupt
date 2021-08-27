@@ -1,5 +1,6 @@
 package xyz.erupt.annotation.sub_field;
 
+import xyz.erupt.annotation.sub_field.sub_edit.RegionType;
 import xyz.erupt.annotation.config.Comment;
 import xyz.erupt.annotation.config.EruptProperty;
 import xyz.erupt.annotation.config.Match;
@@ -97,4 +98,6 @@ public @interface Edit {
     @Transient
     Tpl tplType() default @Tpl(path = "");
 
+    @Match("#item.type().toString()=='REGION'")
+    RegionType regionType() default @RegionType();
 }

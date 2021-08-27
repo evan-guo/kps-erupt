@@ -302,4 +302,6 @@ public class EruptUtil {
         return null;
     }
 
+    private static class JsonObject {
+    }
 }

@@ -60,6 +60,8 @@ public enum EditType {
     HIDDEN,
     @EditTypeMapping(desc = "空（仍占据组件位置）", allowType = {JavaTypeEnum.not_know}, excelOperator = false)
     EMPTY,
+    @EditTypeMapping(desc = "省市区")
+    REGION,
 
     @Comment("==================================")
     @Comment("以下对象使用较为复杂，作用于复杂对象基础上")

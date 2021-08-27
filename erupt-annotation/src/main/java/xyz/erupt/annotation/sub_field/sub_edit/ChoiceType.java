@@ -16,7 +16,7 @@ public @interface ChoiceType {
 
     @Transient
     @Comment("手动配置选择项")
-    VL[] vl() default {};
+    xyz.erupt.annotation.sub_field.sub_edit.VL[] vl() default {};
 
     @Transient
     @Comment("可被fetchHandler接口获取到")
@@ -33,6 +33,6 @@ public @interface ChoiceType {
         @Comment("下拉选择")
         SELECT,
         @Comment("单选框")
-        RADIO,
+        RADIO
     }
 }
