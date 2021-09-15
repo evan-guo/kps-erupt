@@ -10,6 +10,7 @@ import javax.persistence.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author YuePeng
@@ -43,6 +44,18 @@ public class EruptDao {
         return entityManager.merge(t);
     }
 
+    public <T> T mergeAndFlush(T t) {
+        try {
+            return this.merge(t);
+        } finally {
+            this.flush();
+        }
+    }
+
+    public void flush() {
+        entityManager.flush();
+    }
+
     //删除
     public void delete(Object obj) {
         entityManager.remove(obj);
@@ -64,26 +77,23 @@ public class EruptDao {
 
     //不存在则新增
     public <T> T persistIfNotExist(Class<T> eruptClass, Object obj, String field, String val) throws NonUniqueResultException {
-        T t = (T) queryEntity(obj.getClass(), field + EQU + " :val", new HashMap<String, Object>(1) {
-            {
-                this.put("val", val);
-            }
-        });
+        T t = (T) queryEntity(obj.getClass(), field + EQU + " :val", new HashMap<String, Object>(1) {{
+            this.put("val", val);
+        }});
         if (null == t) {
             entityManager.persist(obj);
             entityManager.flush();
             return (T) obj;
-        } else {
-            return t;
         }
+        return t;
     }
 
     //以下方法调用时需考虑sql注入问题，切勿随意传递expr参数值!!!
-    public List<Map<String, Object>> queryMapList(Class eruptClass, String expr, Map<String, Object> param, String... cols) {
+    public List<Map<String, Object>> queryMapList(Class<?> eruptClass, String expr, Map<String, Object> param, String... cols) {
         return simpleQuery(eruptClass, true, expr, param, cols).getResultList();
     }
 
-    public List<Object[]> queryObjectList(Class eruptClass, String expr, Map<String, Object> param, String... cols) {
+    public List<Object[]> queryObjectList(Class<?> eruptClass, String expr, Map<String, Object> param, String... cols) {
         return simpleQuery(eruptClass, false, expr, param, cols).getResultList();
     }
 
@@ -99,7 +109,7 @@ public class EruptDao {
         return this.queryEntityList(eruptClass, null);
     }
 
-    public Map<String, Object> queryMap(Class eruptClass, String expr, Map<String, Object> param, String... cols) throws NonUniqueResultException {
+    public Map<String, Object> queryMap(Class<?> eruptClass, String expr, Map<String, Object> param, String... cols) throws NonUniqueResultException {
         try {
             return (Map<String, Object>) simpleQuery(eruptClass, true, expr, param, cols).getSingleResult();
         } catch (NoResultException e) {
@@ -107,7 +117,7 @@ public class EruptDao {
         }
     }
 
-    public Object[] queryObject(Class eruptClass, String expr, Map<String, Object> param, String... cols) throws NonUniqueResultException {
+    public Object[] queryObject(Class<?> eruptClass, String expr, Map<String, Object> param, String... cols) throws NonUniqueResultException {
         try {
             return (Object[]) simpleQuery(eruptClass, false, expr, param, cols).getSingleResult();
         } catch (NoResultException e) {
@@ -131,9 +141,7 @@ public class EruptDao {
         return this.queryEntity(eruptClass, null);
     }
 
-
-
-    private Query simpleQuery(Class eruptClass, boolean isMap, String expr, Map<String, Object> paramMap, String... cols) {
+    private Query simpleQuery(Class<?> eruptClass, boolean isMap, String expr, Map<String, Object> paramMap, String... cols) {
         StringBuilder sb = new StringBuilder();
         if (cols.length > 0) {
             sb.append(SELECT);
@@ -150,12 +158,8 @@ public class EruptDao {
             }
         }
         expr = StringUtils.isBlank(expr) ? "" : WHERE + expr;
-        Query query = entityManager.createQuery(sb.toString() + FROM + eruptClass.getSimpleName() + expr);
-        if (null != paramMap) {
-            for (Map.Entry<String, Object> entry : paramMap.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
-            }
-        }
+        Query query = entityManager.createQuery(sb + FROM + eruptClass.getSimpleName() + expr);
+        Optional.ofNullable(paramMap).ifPresent(map -> map.forEach(query::setParameter));
         return query;
     }
 }

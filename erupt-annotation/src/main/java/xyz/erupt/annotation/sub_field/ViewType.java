@@ -47,5 +47,5 @@ public enum ViewType {
     TAB_VIEW,
     @Deprecated
     @Comment("markdown 编辑器")
-    MARKDOWN
+    MARKDOWN,
 }

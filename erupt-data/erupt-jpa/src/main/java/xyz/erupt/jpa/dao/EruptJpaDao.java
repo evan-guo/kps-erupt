@@ -1,8 +1,8 @@
 package xyz.erupt.jpa.dao;
 
 import org.springframework.stereotype.Repository;
+import xyz.erupt.annotation.query.Condition;
 import xyz.erupt.core.annotation.EruptDataSource;
-import xyz.erupt.core.query.Condition;
 import xyz.erupt.core.query.EruptQuery;
 import xyz.erupt.core.util.EruptUtil;
 import xyz.erupt.core.view.EruptFieldModel;
@@ -91,9 +91,8 @@ public class EruptJpaDao {
             }
             page.setTotal((Long) countQuery.getSingleResult());
             if (page.getTotal() > 0) {
-                List list = query.setMaxResults(page.getPageSize())
-                        .setFirstResult((page.getPageIndex() - 1) * page.getPageSize()).getResultList();
-                page.setList(list);
+                page.setList(query.setMaxResults(page.getPageSize())
+                        .setFirstResult((page.getPageIndex() - 1) * page.getPageSize()).getResultList());
             } else {
                 page.setList(new ArrayList<>(0));
             }

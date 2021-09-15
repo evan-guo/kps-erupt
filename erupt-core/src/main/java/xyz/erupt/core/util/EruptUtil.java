@@ -6,11 +6,13 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import xyz.erupt.annotation.EruptField;
+import xyz.erupt.annotation.SceneEnum;
 import xyz.erupt.annotation.config.QueryExpression;
 import xyz.erupt.annotation.constant.AnnotationConst;
 import xyz.erupt.annotation.fun.AttachmentProxy;
 import xyz.erupt.annotation.fun.ChoiceFetchHandler;
 import xyz.erupt.annotation.fun.VLModel;
+import xyz.erupt.annotation.query.Condition;
 import xyz.erupt.annotation.sub_field.Edit;
 import xyz.erupt.annotation.sub_field.EditType;
 import xyz.erupt.annotation.sub_field.EditTypeSearch;
@@ -21,7 +23,6 @@ import xyz.erupt.annotation.sub_field.sub_edit.ReferenceTreeType;
 import xyz.erupt.annotation.sub_field.sub_edit.TagsType;
 import xyz.erupt.core.annotation.EruptAttachmentUpload;
 import xyz.erupt.core.exception.EruptApiErrorTip;
-import xyz.erupt.core.query.Condition;
 import xyz.erupt.core.service.EruptApplication;
 import xyz.erupt.core.service.EruptCoreService;
 import xyz.erupt.core.view.EruptApiModel;
@@ -57,8 +58,8 @@ public class EruptUtil {
                 switch (eruptField.edit().type()) {
                     case REFERENCE_TREE:
                     case REFERENCE_TABLE:
-                        String id = null;
-                        String label = null;
+                        String id;
+                        String label;
                         if (eruptField.edit().type() == EditType.REFERENCE_TREE) {
                             ReferenceTreeType referenceTreeType = eruptField.edit().referenceTreeType();
                             id = referenceTreeType.id();
@@ -72,7 +73,8 @@ public class EruptUtil {
                         referMap.put(id, ReflectUtil.findFieldChain(id, value));
                         referMap.put(label, ReflectUtil.findFieldChain(label, value));
                         for (View view : eruptField.views()) {
-                            referMap.put(view.column(), ReflectUtil.findFieldChain(view.column(), value));
+                            //修复表格列无法显示子类属性（例如xxx.yyy.zzz这样的列配置）的缺陷，要配合前端的bug修复。
+                            referMap.put(view.column().replace(".", "_"), ReflectUtil.findFieldChain(view.column(), value));
                         }
                         map.put(field.getName(), referMap);
                         break;
@@ -269,8 +271,7 @@ public class EruptUtil {
                         if (!AnnotationConst.EMPTY_STR.equals(edit.inputType().regex())) {
                             String content = value.getAsString();
                             if (StringUtils.isNotBlank(content)) {
-                                boolean isMatch = Pattern.matches(edit.inputType().regex(), content);
-                                if (!isMatch) {
+                                if (!Pattern.matches(edit.inputType().regex(), content)) {
                                     return EruptApiModel.errorNoInterceptMessage(field.getEruptField().edit().title() + "格式不正确");
                                 }
                             }
@@ -289,6 +290,52 @@ public class EruptUtil {
         return TypeUtil.typeStrConvertObject(id, primaryField.getType());
     }
 
+    //将对象A的非空数据源覆盖到对象B中
+    public static Object dataTarget(EruptModel eruptModel, Object data, Object target, SceneEnum sceneEnum) {
+        ReflectUtil.findClassAllFields(eruptModel.getClazz(), (field) -> {
+            EruptField eruptField = field.getAnnotation(EruptField.class);
+            if (null != eruptField) {
+                boolean readonly = sceneEnum == SceneEnum.EDIT ? eruptField.edit().readonly().edit() : eruptField.edit().readonly().add();
+                if (StringUtils.isNotBlank(eruptField.edit().title()) && !readonly) {
+                    try {
+                        Field f = ReflectUtil.findClassField(eruptModel.getClazz(), field.getName());
+                        if (eruptField.edit().type() == EditType.TAB_TABLE_ADD) {
+                            Collection<?> s = (Collection<?>) f.get(target);
+                            if (null == s) {
+                                f.set(target, f.get(data));
+                            } else {
+                                s.clear();
+                                s.addAll((Collection) f.get(data));
+                                f.set(target, s);
+                            }
+                        } else {
+                            f.set(target, f.get(data));
+                        }
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        return target;
+    }
+
+    //清理序列化后对象所产生的默认值（通过json串进行校验）
+    public static void clearObjectDefaultValueByJson(Object obj, JsonObject data) {
+        ReflectUtil.findClassAllFields(obj.getClass(), field -> {
+            try {
+                field.setAccessible(true);
+                if (null != field.get(obj)) {
+                    if (!data.has(field.getName())) {
+                        field.set(obj, null);
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     /**
      * 获取附件上传代理器
      *
@@ -302,6 +349,4 @@ public class EruptUtil {
         return null;
     }
 
-    private static class JsonObject {
-    }
 }
