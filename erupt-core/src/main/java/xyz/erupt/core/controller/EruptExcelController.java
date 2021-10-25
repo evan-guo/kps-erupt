@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -93,7 +94,12 @@ public class EruptExcelController {
         Page page = eruptService.getEruptData(eruptModel, tableQueryVo, null);
         Workbook wb = dataFileService.exportExcel(eruptModel, page);
         DataProxyInvoke.invoke(eruptModel, (dataProxy -> dataProxy.excelExport(wb)));
-        wb.write(HttpUtil.downLoadFile(request, response, eruptModel.getErupt().name() + EruptExcelService.XLS_FORMAT));
+        response.setHeader("content-disposition","attachment;filename*=UTF-8''" + eruptModel.getErupt().name() + EruptExcelService.XLS_FORMAT);
+        String originalFileName = URLEncoder.encode(eruptModel.getErupt().name() + EruptExcelService.XLS_FORMAT, "utf-8");
+        response.reset();
+        response.setHeader("content-disposition", "attachment;filename*=utf-8''" + originalFileName );
+        response.setContentType("application/octet-stream; charset=utf-8");
+        wb.write(HttpUtil.downLoadFile(request, response, originalFileName));
     }
 
     //导入

@@ -2,6 +2,7 @@ package xyz.erupt.annotation.sub_field;
 
 import xyz.erupt.annotation.config.Comment;
 import xyz.erupt.annotation.config.EruptProperty;
+import xyz.erupt.annotation.sub_field.sub_view.Statistical;
 
 import java.beans.Transient;
 
@@ -27,6 +28,9 @@ public @interface View {
     boolean show() default true;
 
     boolean sortable() default false;
+
+    @Comment("统计")
+    Statistical statistical() default @Statistical();
 
     @Transient
     boolean export() default true;
