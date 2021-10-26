@@ -34,5 +34,7 @@ public @interface ChoiceType {
         SELECT,
         @Comment("单选框")
         RADIO,
+        @Comment("标签多选择")
+        TAGS,
     }
 }

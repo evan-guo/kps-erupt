@@ -94,7 +94,6 @@ public class EruptExcelController {
         Page page = eruptService.getEruptData(eruptModel, tableQueryVo, null);
         Workbook wb = dataFileService.exportExcel(eruptModel, page);
         DataProxyInvoke.invoke(eruptModel, (dataProxy -> dataProxy.excelExport(wb)));
-        response.setHeader("content-disposition","attachment;filename*=UTF-8''" + eruptModel.getErupt().name() + EruptExcelService.XLS_FORMAT);
         String originalFileName = URLEncoder.encode(eruptModel.getErupt().name() + EruptExcelService.XLS_FORMAT, "utf-8");
         response.reset();
         response.setHeader("content-disposition", "attachment;filename*=utf-8''" + originalFileName );
